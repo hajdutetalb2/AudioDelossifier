@@ -115,28 +115,40 @@ def preprocess_dataset():
                 y_train = np.concatenate([y_train, np.stack(np.split(mdata[:sl], cfg.InputSize), axis=1)], 0)                        
     return x_train, y_train
 
-cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=cfg.ModelFileName,
+# Set up the checkpoint callback with a unique name to save different versions
+checkpoint_dir = os.path.dirname(cfg.ModelFileName)
+cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=os.path.join(checkpoint_dir, 'checkpoint-{epoch:04d}.ckpt'),
     monitor="accuracy", mode="max",    
-    save_best_only=True,
+    save_best_only=False,  # Save all checkpoints, not just the best one
     save_weights_only=True,    
     verbose=1,
 )
 
-#model = af.build_model()
 model = af.build_model_v2()
-#model = af.build_model_v3()
-
-#model = af.build_model_fft()
-#model = af.build_model_fft_cnn()
-#model = af.build_model_myfft()
 model = af.compile_model(model)
 model.summary()
 
+# Load the most recent checkpoint if it exists
+latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+if latest_checkpoint:
+    print(f"Loading weights from checkpoint: {latest_checkpoint}")
+    model.load_weights(latest_checkpoint)
+else:
+    print("No checkpoint found, initializing model from scratch.")
+
+# Model initialization remains unchanged.
+model = af.build_model_v2()
+model = af.compile_model(model)
+model.summary()
+
+# Load initial weights if available
 af.load_weights(model)
 
+# Preprocess the dataset
 x_train, y_train = preprocess_dataset()
-print (f"Traindata length: {len(x_train)}")
+print(f"Traindata length: {len(x_train)}")
 
+# Adjust dataset for batch size
 train_len = len(x_train) // cfg.BatchSize * cfg.BatchSize
 x_train = x_train[0:train_len]
 y_train = y_train[0:train_len]
