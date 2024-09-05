@@ -6,6 +6,7 @@ from numpy.core.arrayprint import dtype_is_implied
 
 import tensorflow as tf
 import tensorflow.python.keras as k
+import re
 
 #from tensorflow.python.keras.layers.experimental import preprocessing
 from tensorflow.python.keras import layers
@@ -130,9 +131,17 @@ model.summary()
 
 # Load the most recent checkpoint if it exists
 latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+initial_epoch = 0
+
 if latest_checkpoint:
     print(f"Loading weights from checkpoint: {latest_checkpoint}")
     model.load_weights(latest_checkpoint)
+    
+    # Extract epoch number from the checkpoint filename (e.g., 'checkpoint-0045.ckpt')
+    epoch_number = re.search(r'checkpoint-(\d+)', latest_checkpoint)
+    if epoch_number:
+        initial_epoch = int(epoch_number.group(1))
+        print(f"Resuming from epoch {initial_epoch}")
 else:
     print("No checkpoint found, initializing model from scratch.")
 
@@ -172,4 +181,5 @@ mse = tf.keras.metrics.MeanSquaredError()
 mse.update_state(x_train, y_train)
 print(f'Base mse of the data without training: {mse.result().numpy()}')
 
-model.fit(x_train, y_train, batch_size=cfg.BatchSize, epochs=cfg.Epochs, callbacks=[cp_callback], shuffle=False)
+model.fit(x_train, y_train, batch_size=cfg.BatchSize, epochs=cfg.Epochs, 
+          initial_epoch=initial_epoch, callbacks=[cp_callback], shuffle=False)
