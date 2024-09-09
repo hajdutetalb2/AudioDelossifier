@@ -116,19 +116,19 @@ def preprocess_dataset():
                 y_train = np.concatenate([y_train, np.stack(np.split(mdata[:sl], cfg.InputSize), axis=1)], 0)                        
     return x_train, y_train
 
-class FlushToDriveCheckpoint(tf.keras.callbacks.ModelCheckpoint):
-    def on_epoch_end(self, epoch, logs=None):
-        super().on_epoch_end(epoch, logs)
+# class FlushToDriveCheckpoint(tf.keras.callbacks.ModelCheckpoint):
+#     def on_epoch_end(self, epoch, logs=None):
+#         super().on_epoch_end(epoch, logs)
 
-        print(f"Checkpoint saved for epoch {epoch+1}, flushing...")
-        from google.colab import drive
-        drive.flush_and_unmount()
-        drive.mount('/content/drive')
+#         print(f"Checkpoint saved for epoch {epoch+1}, flushing...")
+#         from google.colab import drive
+#         drive.flush_and_unmount()
+#         drive.mount('/content/drive')
 
 
 # Set up the checkpoint callback with a unique name to save different versions
 checkpoint_dir = os.path.dirname(cfg.ModelFileName)
-cp_callback = FlushToDriveCheckpoint(filepath=os.path.join(checkpoint_dir, 'checkpoint-{epoch:04d}.ckpt'),
+cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=os.path.join(checkpoint_dir, 'checkpoint-{epoch:04d}.ckpt'),
     monitor="accuracy", mode="max",    
     save_best_only=False,  # Save all checkpoints, not just the best one
     save_weights_only=True,    
